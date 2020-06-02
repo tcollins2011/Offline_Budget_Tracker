@@ -12,7 +12,7 @@ const FILES_TO_CACHE = [
   const CACHE_NAME = "static-cache-v1";
   const DATA_CACHE_NAME = "data-cache-v1";
   
-  // install
+  
   self.addEventListener("install", function(evt) {
     evt.waitUntil(
       caches.open(CACHE_NAME).then(cache => {
@@ -24,13 +24,14 @@ const FILES_TO_CACHE = [
     self.skipWaiting();
   });
   
+  // saves the cache key and also deletes old caches
   self.addEventListener("activate", function(evt) {
     evt.waitUntil(
       caches.keys().then(keyList => {
         return Promise.all(
           keyList.map(key => {
             if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
-              console.log("Removing old cache data", key);
+              console.log("Removing outdated caches", key);
               return caches.delete(key);
             }
           })
@@ -41,7 +42,7 @@ const FILES_TO_CACHE = [
     self.clients.claim();
   });
   
-  // fetch
+  // Retrieves info from cache
   self.addEventListener("fetch", function(evt) {
     // cache successful requests to the API
     if (evt.request.url.includes("/api/")) {
@@ -67,14 +68,14 @@ const FILES_TO_CACHE = [
     }
   
     event.respondWith(
-        fetch(event.request).catch(function() {
-          return caches.match(event.request).then(function(response) {
-            if (response) {
-              return response;
-            } else if (event.request.headers.get("accept").includes("text/html")) {
-              // return the cached home page for all requests for html pages
-              return caches.match("/");
-            }
+      fetch(event.request).catch(function() {
+        return caches.match(event.request).then(function(response) {
+          if (response) {
+            return response;
+          } else if (event.request.headers.get("accept").includes("text/html")) {
+            // return the cached home page for all requests for html pages
+            return caches.match("/");
+          }
           });
         })
       );
